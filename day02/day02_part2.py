@@ -3,6 +3,7 @@ import sys
 def main():
     depth = 0
     length = 0
+    aim = 0
 
     for line in sys.stdin:
         tokens = line.split(' ')
@@ -11,10 +12,11 @@ def main():
         
         if command == "forward":
             length += value
+            depth += aim * value
         elif command == "up":
-            depth -= value
+            aim -= value
         elif command == "down":
-            depth += value
+            aim += value
         else:
             print("Unknown command")
     
