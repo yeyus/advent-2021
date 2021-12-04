@@ -1,12 +1,11 @@
 use std::io;
 use std::io::BufRead;
+use std::cmp;
 
 mod bingocard;
 use bingocard::BingoCard;
 
 fn main() {
-    //println!("Hello World!");
-
     let stdin = io::stdin();
     
     let mut n = 0;
@@ -48,18 +47,31 @@ fn main() {
 
     // lets play bingo
     println!("Number of parsed BingoCards: {}", cards.len());
+    
+    let mut max_num = 0;
+    let mut last_card_index = 0;
 
-    'outer: for number in numbers {
-        for c in cards.iter_mut() {
+    for i in 0 .. cards.len() {
+        let c = &mut cards[i];
+        'inner: for j in 0 .. numbers.len() {
+            let number = numbers[j];
             let result = c.offer(number);
             match result {
-                Some(x) => {
-                    println!("Result: {}", x);
-                    println!("Result card: {:?}", c);
-                    break 'outer;
+                Some(_) => {
+                    max_num = cmp::max(max_num, j);
+                    
+                    if max_num == j {
+                        last_card_index = i;
+                    }
+                    break 'inner;
                 },
                 None => (),
             }
         }
     }
+
+    println!("Last card is {:?}", cards[last_card_index]);
+    println!("Last card result is {}", cards[last_card_index].sum() * numbers[max_num]);
+    println!("Last number is {}", numbers[max_num]);
+
 }
