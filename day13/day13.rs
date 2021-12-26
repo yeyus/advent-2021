@@ -1,10 +1,18 @@
 use std::io;
 use std::io::BufRead;
+use std::hash::Hash;
+use std::collections::HashSet;
 
-#[derive(Copy,Clone,Debug)]
+#[derive(Copy,Clone,Hash,Eq,Debug)]
 struct Point<T> {
     x: T,
     y: T
+}
+
+impl<T: std::cmp::PartialEq> PartialEq for Point<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.x == other.x && self.y == other.y
+    }
 }
 
 #[derive(Debug)]
@@ -17,7 +25,7 @@ fn fold(og : Point<u32>, fold: &Fold) -> Option<Point<u32>> {
     match fold {
         Fold::Horizontal(f) => {
             if og.y > *f {
-                return Some(Point { x: og.x, y: *f - og.y % *f});
+                return Some(Point { x: og.x, y: *f - (og.y - *f) });
             } else if og.y == *f {
                 return None
             } else {
@@ -26,7 +34,7 @@ fn fold(og : Point<u32>, fold: &Fold) -> Option<Point<u32>> {
         },
         Fold::Vertical(f) => {
             if og.x > *f {
-                return Some(Point { x: *f - og.x % *f, y: og.y });
+                return Some(Point { x: *f - (og.x - *f), y: og.y });
             } else if og.x == *f {
                 return None
             } else {
@@ -43,14 +51,28 @@ fn print_grid(points: &Vec<Point<u32>>) {
     println!("Max X is {}", maxx);
     println!("Max Y is {}", maxy);
 
-    let mut grid = vec![vec![false; maxx as usize] ; maxy as usize];
+    let mut grid = vec![vec![false; maxx as usize + 1] ; maxy as usize + 1];
 
-    points.iter().enumerate().for_each(|(i, arg)| {
-        println!("Processing {} and {}", arg.x, arg.y);
-        //grid[arg.x][arg.y] = true;
+    points.iter().enumerate().for_each(|(_, arg)| {
+        //println!("Processing {} and {}", arg.x, arg.y);
+        grid[arg.y as usize][arg.x as usize] = true;
     });
 
-    println!("The grid: {:?}", grid);
+    println!("The grid: ");
+    let mut y = 0;
+    for row in grid.iter() {
+        print!("{}\t", y);
+        for cell in row.iter() {
+            print!("{}", if *cell { "#" } else { "." });
+        }
+        println!("");
+        y = y + 1;
+    }
+}
+
+fn dedup<T: Eq + Hash + Copy>(v: &mut Vec<T>) {
+    let mut uniques = HashSet::new();
+    v.retain(|e| uniques.insert(*e));
 }
 
 fn main() {
@@ -99,15 +121,27 @@ fn main() {
     println!("List of instructions: {:?}", instructions);
     print_grid(&points);
 
+    let mut step = 0;
     for inst in &instructions {
+        step = step + 1;
+        println!("This is step no {}", step);
         let new_points : Vec<_> = points
                 .iter()
                 .filter_map(|point| {
                     let a =fold(*point, inst);
-                    println!("Point {:?} transformed into {:?}", point, a);
+                    //println!("Point {:?} transformed into {:?}", point, a);
                     return a;
                 })
-                .collect();
-        println!("New points after applying {:?}: {:?}", inst, new_points);
+                .collect();        
+        //println!("New points after applying {:?}: {:?}", inst, new_points);
+        print_grid(&new_points);
+        points = new_points;
+        
+        // Part 1 solution
+        // if step == 1 {
+        //     dedup(&mut points);
+        //     println!("Part 1 RESULT => The number if points after first step is {}", points.len());
+        //     break;
+        // }
     }
 }
